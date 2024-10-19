@@ -1,5 +1,6 @@
 import Conversation from '../models/conversation.model.js'
 import Message from '../models/message.model.js'
+import { getReceiverSocketId, io } from '../socket/socket.js'
 
 export const sendMessage = async (req, res) => {
   try{
@@ -32,7 +33,7 @@ export const sendMessage = async (req, res) => {
       conversation.messages.push(newMessage._id) //messages is an array, NOTE: this won't go into the database unless you save it
     }
 
-    //SOCKET IO FUNCTIONALITY goes here (realtime messages)
+    
 
     // await conversation.save()
     // await newMessage.save()
@@ -40,6 +41,13 @@ export const sendMessage = async (req, res) => {
     //The two lines above can be replaced with this efficient code, since it runs at the same time
     await Promise.all([conversation.save(), newMessage.save()])
 
+    //SOCKET IO FUNCTIONALITY goes here (realtime messages)
+    const receiverSocketId = getReceiverSocketId(receiverId)
+    // If receiver exists
+    if(receiverSocketId){
+      // It will specifically send an event to a certain user (receiver)
+      io.to(receiverSocketId).emit("newMessage", newMessage)
+    }
     
     // It will create and save new collections in the database for both the conversation and message collection
 
